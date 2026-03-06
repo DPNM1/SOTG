@@ -19,8 +19,8 @@ async function initApp() {
   if (tg) {
     tg.ready();
     tg.expand();
-    tg.setHeaderColor('#0a0a0f');
-    tg.setBackgroundColor('#0a0a0f');
+    tg.setHeaderColor('#000000');
+    tg.setBackgroundColor('#000000');
   }
 
   // Register pages

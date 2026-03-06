@@ -74,6 +74,6 @@ export const ACTIVITY_ICONS = {
     insight: '💡',
 };
 
-export const DOMAIN_COLORS = ['#6C5CE7', '#00cec9', '#fd79a8', '#fdcb6e', '#00b894', '#e17055', '#0984e3', '#636e72'];
+export const DOMAIN_COLORS = ['#ffffff', '#cccccc', '#999999', '#666666', '#444444', '#222222', '#111111', '#888888'];
 
 export const DOMAIN_ICONS = ['📚', '🧮', '🔬', '💻', '🎵', '🎨', '🏋️', '✍️', '🧠', '🌍'];
