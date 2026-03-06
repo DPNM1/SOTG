@@ -50,6 +50,7 @@ async function loadProfile() {
         </div>
         <h2 style="font-size:18px;font-weight:700;">${user.display_name}</h2>
         ${user.telegram_username ? `<p style="font-size:13px;color:var(--text-hint);">@${user.telegram_username}</p>` : ''}
+        <p style="font-size:11px;color:var(--text-hint);font-family:var(--font-mono);margin-top:4px;">ID: ${user.telegram_id}</p>
         <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;">
           <div style="text-align:center;">
             <div style="font-size:20px;font-weight:800;color:var(--fire);"><i data-lucide="flame" style="width:20px;height:20px;display:inline-block;vertical-align:bottom;flex-shrink:0;"></i> ${user.streak_current}</div>
