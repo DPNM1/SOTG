@@ -146,7 +146,7 @@ export async function updateQuest(questId, updates) {
     // Log conquered
     if (updates.phase === 'conquered' && data) {
         await supabase.from('quests').update({ conquered_at: new Date().toISOString() }).eq('id', questId);
-        await logActivity('quest_conquered', `⚔️ Conquered: "${data.title}"`, questId);
+        await logActivity('quest_conquered', `Conquered: "${data.title}"`, questId);
         await updateStreak();
     }
 
@@ -194,7 +194,7 @@ export async function createJournalEntry(content, mood) {
         .select()
         .single();
     if (error) throw error;
-    await logActivity('journal_entry', `📖 Wrote journal entry`, null);
+    await logActivity('journal_entry', `Wrote journal entry`, null);
     await updateStreak();
     return data;
 }
@@ -349,7 +349,7 @@ async function updateStreak() {
         currentUser = data;
 
         if (newStreak > 0 && newStreak % 7 === 0) {
-            await logActivity('streak', `🔥 ${newStreak}-day streak!`);
+            await logActivity('streak', `${newStreak}-day streak!`);
         }
     }
 }
@@ -372,7 +372,7 @@ export async function createConnection(questAId, questBId, description) {
         .select()
         .single();
     if (error) throw error;
-    await logActivity('connection_found', `🔗 Found connection: ${description}`);
+    await logActivity('connection_found', `Found connection: ${description}`);
     return data;
 }
 

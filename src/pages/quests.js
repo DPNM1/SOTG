@@ -13,7 +13,7 @@ export function renderQuestsPage() {
     page.className = 'page';
     page.innerHTML = `
     <div class="section-header">
-      <h2 class="section-title">⚔️ Your Quests</h2>
+      <h2 class="section-title"><i data-lucide="swords" style="width:24px;height:24px;display:inline-block;vertical-align:middle;"></i> Your Quests</h2>
       <button class="btn btn-primary btn-sm" id="add-quest-btn">+ New</button>
     </div>
     <div id="quests-content">
@@ -49,10 +49,10 @@ async function loadQuests() {
         if (quests.length === 0 && domains.length === 0) {
             container.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">🗺️</div>
+          <div class="empty-state-icon"><i data-lucide="map" style="width:48px;height:48px;"></i></div>
           <h3 class="empty-state-title">No quests yet</h3>
           <p class="empty-state-text">Start your journey by creating your first domain and quest. Tell us what you want to master!</p>
-          <button class="btn btn-primary" id="start-journey-btn">🚀 Start Your Journey</button>
+          <button class="btn btn-primary" id="start-journey-btn"><i data-lucide="rocket" style="width:18px;height:18px;"></i> Start Your Journey</button>
         </div>
       `;
             document.getElementById('start-journey-btn')?.addEventListener('click', showAddQuestModal);
@@ -64,7 +64,8 @@ async function loadQuests() {
         quests.forEach(q => {
             const domName = q.arcs?.domains?.name || 'Uncategorized';
             const domColor = q.arcs?.domains?.color || '#6C5CE7';
-            const domIcon = q.arcs?.domains?.icon || '📚';
+            let domIcon = q.arcs?.domains?.icon || 'book';
+            if (domIcon.length <= 2) domIcon = 'book'; // Fallback for old emojis
             const arcName = q.arcs?.name || 'General';
             const key = `${domName}|||${domColor}|||${domIcon}`;
             if (!grouped[key]) grouped[key] = {};
@@ -95,7 +96,7 @@ async function loadQuests() {
         html += '<button class="chip selected" data-filter="all">All</button>';
         Object.keys(grouped).forEach(key => {
             const [name, color, icon] = key.split('|||');
-            html += `<button class="chip" data-filter="${name}"><span class="domain-dot" style="background:${color};display:inline-block;width:8px;height:8px;border-radius:50;margin-right:4px;"></span>${icon} ${name}</button>`;
+            html += `<button class="chip" data-filter="${name}"><span class="domain-dot" style="background:${color};display:inline-block;width:8px;height:8px;border-radius:50;margin-right:4px;"></span><i data-lucide="${icon}" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> ${name}</button>`;
         });
         html += '</div>';
 
@@ -103,7 +104,7 @@ async function loadQuests() {
         for (const [key, arcs] of Object.entries(grouped)) {
             const [domName, domColor, domIcon] = key.split('|||');
             html += `<div class="domain-section" data-domain="${domName}">`;
-            html += `<div class="section-subtitle" style="color:${domColor}">${domIcon} ${domName}</div>`;
+            html += `<div class="section-subtitle" style="color:${domColor}"><i data-lucide="${domIcon}" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> ${domName}</div>`;
 
             for (const [arcName, arcQuests] of Object.entries(arcs)) {
                 if (Object.keys(arcs).length > 1 || arcName !== 'General') {
@@ -117,6 +118,7 @@ async function loadQuests() {
         }
 
         container.innerHTML = html;
+        if (window.lucide) window.lucide.createIcons();
 
         // Bind events
         container.querySelectorAll('.quest-card').forEach(card => {
@@ -143,7 +145,7 @@ function renderQuestCard(q, domColor) {
     return `
     <div class="card quest-card" data-id="${q.id}">
       <div class="quest-card-header">
-        ${q.is_boss ? '<span class="quest-card-boss">👑 BOSS</span>' : ''}
+        ${q.is_boss ? '<span class="quest-card-boss"><i data-lucide="crown" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> BOSS</span>' : ''}
         <span class="quest-card-title">${q.title}</span>
         <div class="level-badge l${q.level}">${q.level}</div>
       </div>
@@ -168,7 +170,7 @@ function showQuestDetail(questId) {
     const currentPhaseIdx = PHASE_ORDER.indexOf(quest.phase);
 
     showModal(`
-    <h2 class="modal-title">${quest.is_boss ? '👑 ' : ''}${quest.title}</h2>
+    <h2 class="modal-title">${quest.is_boss ? '<i data-lucide="crown" style="width:20px;height:20px;display:inline-block;vertical-align:middle;color:#fdcb6e;"></i> ' : ''}${quest.title}</h2>
     <p style="color:var(--text-hint);font-style:italic;margin-bottom:16px;">"${quest.core_question}"</p>
 
     <div class="section-subtitle">Understanding Level</div>
@@ -197,8 +199,8 @@ function showQuestDetail(questId) {
       <textarea class="input" id="quest-notes" placeholder="Write your thoughts, derivations, insights...">${getPhaseNotes(quest) || ''}</textarea>
     </div>
 
-    <button class="btn btn-primary btn-full" id="save-quest-btn">💾 Save Progress</button>
-    ${quest.phase !== 'conquered' ? `<button class="btn btn-ghost btn-full" id="conquer-quest-btn" style="margin-top:8px;">⚔️ Mark as Conquered</button>` : ''}
+    <button class="btn btn-primary btn-full" id="save-quest-btn"><i data-lucide="save" style="width:18px;height:18px;"></i> Save Progress</button>
+    ${quest.phase !== 'conquered' ? `<button class="btn btn-ghost btn-full" id="conquer-quest-btn" style="margin-top:8px;"><i data-lucide="swords" style="width:18px;height:18px;"></i> Mark as Conquered</button>` : ''}
   `);
 
     // Bind level selector
@@ -234,7 +236,7 @@ function showQuestDetail(questId) {
 
         try {
             await updateQuest(questId, updates);
-            showToast('Quest updated! 🎯', 'success');
+            showToast('Quest updated!', 'success');
             closeModal();
             await loadQuests();
             updateHeaderStats();
@@ -247,7 +249,7 @@ function showQuestDetail(questId) {
     document.getElementById('conquer-quest-btn')?.addEventListener('click', async () => {
         try {
             await updateQuest(questId, { phase: 'conquered', conquered_at: new Date().toISOString() });
-            showToast('🎉 Quest Conquered!', 'success');
+            showToast('Quest Conquered!', 'success');
             closeModal();
             await loadQuests();
             updateHeaderStats();
@@ -269,11 +271,11 @@ function getNoteKey(phase) {
 
 function showAddQuestModal() {
     showModal(`
-    <h2 class="modal-title">🗺️ New Quest</h2>
+    <h2 class="modal-title"><i data-lucide="map" style="width:24px;height:24px;display:inline-block;vertical-align:middle;"></i> New Quest</h2>
 
     <div class="tab-bar" id="add-mode-tabs">
       <button class="tab-btn active" data-mode="manual">Manual</button>
-      <button class="tab-btn" data-mode="ai">✨ AI Generate</button>
+      <button class="tab-btn" data-mode="ai"><i data-lucide="sparkles" style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> AI Generate</button>
     </div>
 
     <div id="manual-form">
@@ -282,7 +284,7 @@ function showAddQuestModal() {
         <div style="display:flex;gap:8px;">
           <select class="input" id="domain-select" style="flex:1;">
             <option value="">Select or create new...</option>
-            ${domains.map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`).join('')}
+            ${domains.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
           </select>
           <button class="btn btn-secondary btn-sm" id="new-domain-btn">+</button>
         </div>
@@ -296,7 +298,7 @@ function showAddQuestModal() {
         <div class="input-group">
           <label>Icon</label>
           <div class="chip-row" id="icon-picker">
-            ${DOMAIN_ICONS.map(i => `<button class="chip" data-icon="${i}">${i}</button>`).join('')}
+            ${DOMAIN_ICONS.map(i => `<button class="chip" data-icon="${i}"><i data-lucide="${i}"></i></button>`).join('')}
           </div>
         </div>
       </div>
@@ -313,10 +315,10 @@ function showAddQuestModal() {
 
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
         <input type="checkbox" id="quest-boss">
-        <label for="quest-boss" style="font-size:13px;cursor:pointer;">👑 Boss Quest (foundational topic)</label>
+        <label for="quest-boss" style="font-size:13px;cursor:pointer;"><i data-lucide="crown" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> Boss Quest (foundational topic)</label>
       </div>
 
-      <button class="btn btn-primary btn-full" id="create-quest-btn">⚔️ Create Quest</button>
+      <button class="btn btn-primary btn-full" id="create-quest-btn"><i data-lucide="swords" style="width:18px;height:18px;"></i> Create Quest</button>
     </div>
 
     <div id="ai-form" class="hidden">
@@ -332,7 +334,7 @@ function showAddQuestModal() {
           <button class="chip" data-level="advanced">Advanced</button>
         </div>
       </div>
-      <button class="btn btn-primary btn-full" id="ai-generate-btn">✨ Generate Quest Map</button>
+      <button class="btn btn-primary btn-full" id="ai-generate-btn"><i data-lucide="sparkles" style="width:18px;height:18px;"></i> Generate Quest Map</button>
       <div id="ai-status" style="margin-top:12px;text-align:center;font-size:13px;color:var(--text-hint);"></div>
     </div>
   `);
@@ -349,7 +351,7 @@ function showAddQuestModal() {
     });
 
     // New domain toggle
-    let selectedIcon = '📚';
+    let selectedIcon = 'book';
     document.getElementById('new-domain-btn')?.addEventListener('click', () => {
         document.getElementById('new-domain-fields').classList.toggle('hidden');
     });
@@ -387,7 +389,7 @@ function showAddQuestModal() {
             const arc = await createArc(domainId, 'General', '', '');
             await createQuest(arc.id, title, question, isBoss);
 
-            showToast('Quest created! ⚔️', 'success');
+            showToast('Quest created!', 'success');
             closeModal();
             await loadQuests();
         } catch (err) {
@@ -418,7 +420,7 @@ function showAddQuestModal() {
         try {
             const result = await generateQuests(subject, level);
             if (result?.domain) {
-                showToast(`Created ${result.questCount || 'multiple'} quests! ⚔️`, 'success');
+                showToast(`Created ${result.questCount || 'multiple'} quests!`, 'success');
                 closeModal();
                 await loadQuests();
             } else {
@@ -430,7 +432,8 @@ function showAddQuestModal() {
         } catch (err) {
             status.textContent = 'Error: ' + err.message;
             btn.disabled = false;
-            btn.textContent = '✨ Generate Quest Map';
+            btn.innerHTML = '<i data-lucide="sparkles" style="width:18px;height:18px;"></i> Generate Quest Map';
+            if (window.lucide) window.lucide.createIcons();
         }
     });
 }
@@ -440,7 +443,10 @@ function updateHeaderStats() {
     if (user) {
         const streakEl = document.getElementById('header-streak');
         const levelEl = document.getElementById('header-level');
-        if (streakEl) streakEl.textContent = `🔥 ${user.streak_current || 0}`;
+        if (streakEl) {
+            streakEl.innerHTML = `<i data-lucide="flame" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> ${user.streak_current || 0}`;
+            if (window.lucide) window.lucide.createIcons();
+        }
         const totalLevel = quests.reduce((sum, q) => sum + q.level, 0);
         if (levelEl) levelEl.textContent = `Lv ${totalLevel}`;
     }

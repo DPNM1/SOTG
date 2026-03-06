@@ -52,7 +52,7 @@ async function loadProfile() {
         ${user.telegram_username ? `<p style="font-size:13px;color:var(--text-hint);">@${user.telegram_username}</p>` : ''}
         <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;">
           <div style="text-align:center;">
-            <div style="font-size:20px;font-weight:800;color:var(--fire);">🔥 ${user.streak_current}</div>
+            <div style="font-size:20px;font-weight:800;color:var(--fire);"><i data-lucide="flame" style="width:20px;height:20px;display:inline-block;vertical-align:bottom;flex-shrink:0;"></i> ${user.streak_current}</div>
             <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;">Streak</div>
           </div>
           <div style="text-align:center;">
@@ -123,13 +123,14 @@ async function loadProfile() {
         <em>For the sake of the game.</em>
       </div>
     `;
+        if (window.lucide) window.lucide.createIcons();
 
         // Save manifesto
         document.getElementById('save-manifesto-btn')?.addEventListener('click', async () => {
             const text = document.getElementById('manifesto-input')?.value?.trim();
             try {
                 await supabase.from('users').update({ manifesto: text }).eq('id', user.id);
-                showToast('Manifesto saved! ✨', 'success');
+                showToast('Manifesto saved!', 'success');
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
             }

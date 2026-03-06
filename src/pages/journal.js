@@ -5,20 +5,20 @@
 import { getJournalEntries, createJournalEntry, callAI, getCurrentUser } from '../lib/api.js';
 import { showToast, formatDate, timeAgo } from '../lib/ui.js';
 
-const MOODS = ['🔥', '💡', '😤', '🤔', '😴'];
+const MOODS = ['flame', 'lightbulb', 'zap', 'help-circle', 'moon'];
 
 export function renderJournalPage() {
     const page = document.createElement('div');
     page.className = 'page';
     page.innerHTML = `
     <div class="section-header">
-      <h2 class="section-title">📖 Lab Notebook</h2>
+      <h2 class="section-title"><i data-lucide="book-open" style="width:24px;height:24px;display:inline-block;vertical-align:middle;"></i> Lab Notebook</h2>
     </div>
 
     <div class="tab-bar" id="journal-tabs">
       <button class="tab-btn active" data-tab="write">Write</button>
       <button class="tab-btn" data-tab="history">History</button>
-      <button class="tab-btn" data-tab="feynman">🧠 Feynman</button>
+      <button class="tab-btn" data-tab="feynman"><i data-lucide="brain" style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> Feynman</button>
     </div>
 
     <div id="journal-tab-content">
@@ -43,7 +43,7 @@ function renderWriteTab() {
     <div class="card card-glass">
       <div class="section-subtitle">How are you feeling?</div>
       <div class="mood-selector" id="mood-selector">
-        ${MOODS.map(m => `<button class="mood-btn" data-mood="${m}">${m}</button>`).join('')}
+        ${MOODS.map(m => `<button class="mood-btn" data-mood="${m}"><i data-lucide="${m}" style="width:20px;height:20px;"></i></button>`).join('')}
       </div>
 
       <div class="input-group">
@@ -51,7 +51,7 @@ function renderWriteTab() {
         <textarea class="input" id="journal-content" placeholder="What did you explore today? What clicked? What confused you? What questions remain open?" style="min-height:160px;"></textarea>
       </div>
 
-      <button class="btn btn-primary btn-full" id="save-journal-btn">📝 Save Entry</button>
+      <button class="btn btn-primary btn-full" id="save-journal-btn"><i data-lucide="pen-tool" style="width:18px;height:18px;"></i> Save Entry</button>
     </div>
 
     <div class="manifesto-block" style="margin-top:16px;">
@@ -64,7 +64,7 @@ function renderWriteTab() {
 function renderFeynmanTab() {
     return `
     <div class="card card-glass">
-      <div class="section-subtitle">🧠 Feynman Mode</div>
+      <div class="section-subtitle"><i data-lucide="brain" style="width:18px;height:18px;display:inline-block;vertical-align:middle;"></i> Feynman Mode</div>
       <p style="font-size:13px;color:var(--text-hint);margin-bottom:16px;">
         Explain a concept in your own words. The AI will evaluate your understanding honestly — gaps, misconceptions, and all.
       </p>
@@ -79,7 +79,7 @@ function renderFeynmanTab() {
         <textarea class="input" id="feynman-explanation" placeholder="Explain this topic as if you were teaching someone who has never seen it before. Start from WHY it exists..." style="min-height:150px;"></textarea>
       </div>
 
-      <button class="btn btn-primary btn-full" id="feynman-check-btn">🔍 Check My Understanding</button>
+      <button class="btn btn-primary btn-full" id="feynman-check-btn"><i data-lucide="search" style="width:18px;height:18px;"></i> Check My Understanding</button>
 
       <div id="feynman-result" style="margin-top:16px;"></div>
     </div>
@@ -100,6 +100,7 @@ function initJournalPage() {
             if (activeTab === 'history') loadHistory();
         });
     });
+    if (window.lucide) window.lucide.createIcons();
 
     // Mood selector
     let selectedMood = null;
@@ -118,7 +119,7 @@ function initJournalPage() {
 
         try {
             await createJournalEntry(content, selectedMood);
-            showToast('Journal saved! 📖', 'success');
+            showToast('Journal saved!', 'success');
             document.getElementById('journal-content').value = '';
             document.querySelectorAll('#mood-selector .mood-btn').forEach(b => b.classList.remove('selected'));
             selectedMood = null;
@@ -136,7 +137,8 @@ function initJournalPage() {
         const btn = document.getElementById('feynman-check-btn');
         const result = document.getElementById('feynman-result');
         btn.disabled = true;
-        btn.textContent = '🧠 Analyzing...';
+        btn.innerHTML = '<i data-lucide="brain" style="width:18px;height:18px;display:inline-block;vertical-align:middle;"></i> Analyzing...';
+        if (window.lucide) window.lucide.createIcons();
         result.innerHTML = '<div class="skeleton" style="height:100px;"></div>';
 
         try {
@@ -156,7 +158,8 @@ function initJournalPage() {
       `;
         }
         btn.disabled = false;
-        btn.textContent = '🔍 Check My Understanding';
+        btn.innerHTML = '<i data-lucide="search" style="width:18px;height:18px;"></i> Check My Understanding';
+        if (window.lucide) window.lucide.createIcons();
     });
 }
 
@@ -172,11 +175,12 @@ async function loadHistory() {
         if (entries.length === 0) {
             container.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">📖</div>
+          <div class="empty-state-icon"><i data-lucide="book-open" style="width:48px;height:48px;"></i></div>
           <h3 class="empty-state-title">No entries yet</h3>
           <p class="empty-state-text">Start writing your daily reflections to build your learning journal.</p>
         </div>
       `;
+            if (window.lucide) window.lucide.createIcons();
             return;
         }
 
@@ -184,12 +188,13 @@ async function loadHistory() {
       <div class="card" style="margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:600;">${formatDate(entry.entry_date)}</span>
-          <span style="font-size:18px;">${entry.mood || ''}</span>
+          <span style="font-size:18px;">${entry.mood ? `<i data-lucide="${entry.mood}" style="width:18px;height:18px;"></i>` : ''}</span>
         </div>
         <p style="font-size:14px;line-height:1.6;color:var(--text);white-space:pre-wrap;">${entry.content}</p>
         <span style="font-size:11px;color:var(--text-hint);margin-top:8px;display:block;">${timeAgo(entry.created_at)}</span>
       </div>
     `).join('');
+        if (window.lucide) window.lucide.createIcons();
 
     } catch (err) {
         container.innerHTML = `<div class="empty-state"><p class="empty-state-text">Error: ${err.message}</p></div>`;

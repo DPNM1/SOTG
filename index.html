@@ -10,12 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css" />
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <div id="app">
     <div id="loading-screen">
       <div class="loader-content">
-        <div class="loader-icon">⚔️</div>
+        <div class="loader-icon">🐉</div>
         <h1 class="loader-title">S.O.T.G.</h1>
         <p class="loader-subtitle">Sake Of The Game</p>
         <div class="loader-bar"><div class="loader-bar-fill"></div></div>
@@ -24,7 +25,7 @@
 
     <header id="app-header" class="hidden">
       <div class="header-left">
-        <span class="header-streak" id="header-streak">🔥 0</span>
+        <span class="header-streak" id="header-streak"><i data-lucide="flame" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> 0</span>
       </div>
       <h1 class="header-title">S.O.T.G.</h1>
       <div class="header-right">
@@ -36,19 +37,19 @@
 
     <nav id="bottom-nav" class="hidden">
       <button class="nav-btn active" data-page="quests">
-        <span class="nav-icon">⚔️</span>
+        <span class="nav-icon"><i data-lucide="swords"></i></span>
         <span class="nav-label">Quests</span>
       </button>
       <button class="nav-btn" data-page="journal">
-        <span class="nav-icon">📖</span>
+        <span class="nav-icon"><i data-lucide="book-open"></i></span>
         <span class="nav-label">Journal</span>
       </button>
       <button class="nav-btn" data-page="social">
-        <span class="nav-icon">👥</span>
+        <span class="nav-icon"><i data-lucide="users"></i></span>
         <span class="nav-label">Squad</span>
       </button>
       <button class="nav-btn" data-page="profile">
-        <span class="nav-icon">🧠</span>
+        <span class="nav-icon"><i data-lucide="user"></i></span>
         <span class="nav-label">Profile</span>
       </button>
     </nav>
