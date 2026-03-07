@@ -45,6 +45,7 @@ async function initApp() {
         first_name: 'Dev',
         last_name: 'User',
         username: 'devuser',
+        photo_url: 'https://i.pravatar.cc/150?u=12345678'
       };
     }
 

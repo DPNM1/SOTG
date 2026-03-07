@@ -45,8 +45,8 @@ async function loadProfile() {
         container.innerHTML = `
       <!-- User Card -->
       <div class="card card-glass card-glow" style="text-align:center;padding:24px;">
-        <div class="spirit-avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px;">
-          ${initial}
+        <div class="spirit-avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px;overflow:hidden;">
+          ${user.avatar_url ? `<img src="${user.avatar_url}" style="width:100%;height:100%;object-fit:cover;">` : initial}
           <div class="level-indicator" style="position:absolute;bottom:-4px;right:-4px;background:var(--accent);color:white;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card);">
             ${user.level || 1}
           </div>

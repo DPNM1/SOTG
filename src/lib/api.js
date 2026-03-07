@@ -31,10 +31,13 @@ export async function authenticateUser(telegramUser) {
 
     if (existing) {
         currentUser = existing;
-        // Update last active
+        // Update last active and avatar
         await supabase
             .from('users')
-            .update({ last_active_date: new Date().toISOString().split('T')[0] })
+            .update({ 
+                last_active_date: new Date().toISOString().split('T')[0],
+                avatar_url: telegramUser.photo_url || existing.avatar_url
+            })
             .eq('id', existing.id);
         return existing;
     }
@@ -46,6 +49,7 @@ export async function authenticateUser(telegramUser) {
             telegram_id: telegramUser.id,
             telegram_username: telegramUser.username || null,
             display_name: telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : ''),
+            avatar_url: telegramUser.photo_url || null,
             last_active_date: new Date().toISOString().split('T')[0],
             xp: 0,
             level: 1
