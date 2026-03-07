@@ -25,7 +25,7 @@ export async function authenticateUser(telegramUser) {
     // Try to find existing user
     const { data: existing, error: fetchErr } = await supabase
         .from('users')
-        .select('*')
+        .select('*, artifacts(*)')
         .eq('telegram_id', telegramUser.id)
         .single();
 
@@ -47,8 +47,10 @@ export async function authenticateUser(telegramUser) {
             telegram_username: telegramUser.username || null,
             display_name: telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : ''),
             last_active_date: new Date().toISOString().split('T')[0],
+            xp: 0,
+            level: 1
         })
-        .select()
+        .select('*, artifacts(*)')
         .single();
 
     if (createErr) throw createErr;
@@ -146,8 +148,22 @@ export async function updateQuest(questId, updates) {
     // Log conquered
     if (updates.phase === 'conquered' && data) {
         await supabase.from('quests').update({ conquered_at: new Date().toISOString() }).eq('id', questId);
-        await logActivity('quest_conquered', `Conquered: "${data.title}"`, questId);
+        
+        // Add XP
+        const newXP = (currentUser.xp || 0) + (data.xp_reward || 10);
+        const newLevel = Math.floor(Math.sqrt(newXP / 10)) + 1;
+        
+        const { data: updatedUser } = await supabase
+            .from('users')
+            .update({ xp: newXP, level: newLevel })
+            .eq('id', currentUser.id)
+            .select().single();
+        
+        if (updatedUser) currentUser = updatedUser;
+
+        await logActivity('quest_conquered', `Conquered: "${data.title}" (+${data.xp_reward || 10} XP)`, questId);
         await updateStreak();
+        await checkArtifacts(data.category);
     }
 
     return data;
@@ -300,6 +316,14 @@ export async function getLeaderboard() {
 
         const totalLevels = (quests || []).reduce((sum, q) => sum + q.level, 0);
 
+        const { data: recentTriumphs } = await supabase
+            .from('quests')
+            .select('title')
+            .eq('user_id', user.id)
+            .eq('phase', 'conquered')
+            .order('conquered_at', { ascending: false })
+            .limit(3);
+
         const { count: connectionCount } = await supabase
             .from('connections')
             .select('*', { count: 'exact', head: true })
@@ -308,13 +332,70 @@ export async function getLeaderboard() {
         return {
             ...user,
             quests_conquered: conqueredCount || 0,
+            recent_triumphs: recentTriumphs?.map(q => q.title) || [],
             total_levels: totalLevels,
             connections: connectionCount || 0,
-            score: (conqueredCount || 0) * 100 + totalLevels * 10 + user.streak_current * 5 + (connectionCount || 0) * 20,
+            score: (user.xp || 0) + (user.streak_current * 10) + (connectionCount || 0) * 20,
         };
     }));
 
     return leaderboard.sort((a, b) => b.score - a.score);
+}
+
+// ---- Artifacts & Badges ----
+async function checkArtifacts(category) {
+    if (!currentUser) return;
+
+    // Check if user already has an artifact for this category
+    const { data: existing } = await supabase
+        .from('artifacts')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('name', `${category} Master`);
+
+    if (existing && existing.length > 0) return;
+
+    // Check if all quests in this category are conquered
+    const { data: quests } = await supabase
+        .from('quests')
+        .select('id, phase')
+        .eq('user_id', currentUser.id)
+        .eq('category', category);
+
+    const allConquered = quests.length > 0 && quests.every(q => q.phase === 'conquered');
+
+    if (allConquered) {
+        const artifactNames = {
+            'Mechanics': 'Vinci Gear',
+            'Logic': 'Euler Lantern',
+            'History': 'Herodotus Stone',
+            'Biology': 'Darwin Wing',
+            'Physics': 'Newton Prism',
+            'General': 'SOTG Token'
+        };
+
+        const name = artifactNames[category] || `${category} Relic`;
+        const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>`;
+
+        await supabase.from('artifacts').insert({
+            user_id: currentUser.id,
+            name: name,
+            description: `Mastered the domain of ${category}.`,
+            icon_svg: icon
+        });
+
+        await logActivity('artifact_earned', `Uncovered Artifact: ${name}!`);
+    }
+}
+
+export async function getArtifacts(userId) {
+    const uid = userId || currentUser?.id;
+    const { data, error } = await supabase
+        .from('artifacts')
+        .select('*')
+        .eq('user_id', uid);
+    if (error) throw error;
+    return data;
 }
 
 // ---- Streaks ----

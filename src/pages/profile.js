@@ -2,7 +2,7 @@
 // SOTG — Profile Page
 // ================================================
 
-import { getCurrentUser, getUserStats, getQuests, supabase } from '../lib/api.js';
+import { getCurrentUser, getUserStats, getQuests, getArtifacts, supabase } from '../lib/api.js';
 import { showToast, LEVEL_NAMES } from '../lib/ui.js';
 
 export function renderProfilePage() {
@@ -47,11 +47,27 @@ async function loadProfile() {
       <div class="card card-glass card-glow" style="text-align:center;padding:24px;">
         <div class="spirit-avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px;">
           ${initial}
+          <div class="level-indicator" style="position:absolute;bottom:-4px;right:-4px;background:var(--accent);color:white;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card);">
+            ${user.level || 1}
+          </div>
         </div>
         <h2 style="font-size:18px;font-weight:700;">${user.display_name}</h2>
         ${user.telegram_username ? `<p style="font-size:13px;color:var(--text-hint);">@${user.telegram_username}</p>` : ''}
         <p style="font-size:11px;color:var(--text-hint);font-family:var(--font-mono);margin-top:4px;">ID: ${user.telegram_id}</p>
-        <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;">
+        
+        <!-- XP Progress -->
+        <div style="margin-top:16px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-hint);margin-bottom:4px;text-transform:uppercase;font-weight:700;">
+            <span>${LEVEL_NAMES[user.level - 1] || 'Seeker'}</span>
+            <span>${user.xp % 10 * 10}% to Level ${user.level + 1}</span>
+          </div>
+          <div class="progress-bar" style="height:6px;">
+            <div class="progress-fill" style="width:${user.xp % 10 * 10}%; background:var(--accent-gradient);"></div>
+          </div>
+          <div style="font-size:10px;margin-top:4px;color:var(--text-hint); font-family:var(--font-mono);">${user.xp || 0} Total XP</div>
+        </div>
+
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;">
           <div style="text-align:center;">
             <div style="font-size:20px;font-weight:800;color:var(--fire);"><i data-lucide="flame" style="width:20px;height:20px;display:inline-block;vertical-align:bottom;flex-shrink:0;"></i> ${user.streak_current}</div>
             <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;">Streak</div>
@@ -60,6 +76,16 @@ async function loadProfile() {
             <div style="font-size:20px;font-weight:800;color:var(--accent);">${user.streak_best}</div>
             <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;">Best</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Artifacts Gallery -->
+      <div class="card">
+        <div class="section-subtitle">Curiosity Artifacts</div>
+        <div id="artifacts-list" style="display:flex;gap:12px;overflow-x:auto;padding:8px 0;scrollbar-width:none;">
+          <div class="skeleton" style="width:60px;height:60px;flex-shrink:0;"></div>
+          <div class="skeleton" style="width:60px;height:60px;flex-shrink:0;"></div>
+          <div class="skeleton" style="width:60px;height:60px;flex-shrink:0;"></div>
         </div>
       </div>
 
@@ -124,6 +150,24 @@ async function loadProfile() {
         <em>For the sake of the game.</em>
       </div>
     `;
+        // Load Artifacts
+        const artifacts = await getArtifacts();
+        const artList = document.getElementById('artifacts-list');
+        if (artList) {
+            if (!artifacts || artifacts.length === 0) {
+                artList.innerHTML = '<p style="font-size:11px;color:var(--text-hint);width:100%;text-align:center;padding:12px;">No artifacts found yet. Master a category to unlock them.</p>';
+            } else {
+                artList.innerHTML = artifacts.map(a => `
+                    <div class="artifact-item" style="flex-shrink:0;text-align:center;width:70px;">
+                        <div class="spirit-avatar" style="width:50px;height:50px;margin:0 auto 4px;background:var(--accent-gradient);color:white;padding:10px;">
+                            ${a.icon_svg}
+                        </div>
+                        <div style="font-size:9px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.name}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
         if (window.lucide) window.lucide.createIcons();
 
         // Save manifesto

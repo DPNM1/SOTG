@@ -179,8 +179,19 @@ async function loadLeaderboard() {
               <i data-lucide="swords" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> ${user.quests_conquered} conquered · <i data-lucide="flame" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> ${user.streak_current}d · <i data-lucide="link" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> ${user.connections}
             </div>
           </div>
-          <div class="spirit-score">${user.score}</div>
-        </div>
+            <div class="spirit-score">${user.score}</div>
+          </div>
+          ${user.recent_triumphs && user.recent_triumphs.length > 0 ? `
+            <div class="spirit-triumphs" style="margin-top: -8px; margin-bottom: 12px; padding-left: 112px;">
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                ${user.recent_triumphs.map(t => `
+                  <span style="font-size: 10px; padding: 2px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: var(--text-hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">
+                    <i data-lucide="check-circle" style="width:10px;height:10px;display:inline-block;vertical-align:middle;margin-right:2px;color:var(--accent);"></i> ${t}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
       `;
         });
 
