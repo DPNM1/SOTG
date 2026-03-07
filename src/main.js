@@ -10,6 +10,7 @@ import { renderQuestsPage } from './pages/quests.js';
 import { renderJournalPage } from './pages/journal.js';
 import { renderSocialPage } from './pages/social.js';
 import { renderProfilePage } from './pages/profile.js';
+import { renderPlannerPage } from './pages/planner.js';
 
 // ---- Initialize App ----
 async function initApp() {
@@ -27,6 +28,7 @@ async function initApp() {
   registerPage('quests', renderQuestsPage);
   registerPage('journal', renderJournalPage);
   registerPage('social', renderSocialPage);
+  registerPage('planner', renderPlannerPage);
   registerPage('profile', renderProfilePage);
 
   try {

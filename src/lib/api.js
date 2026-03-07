@@ -113,7 +113,7 @@ export async function getQuests(userId) {
     return data;
 }
 
-export async function createQuest(arcId, title, coreQuestion, isBoss = false) {
+export async function createQuest(arcId, title, coreQuestion, isBoss = false, scheduledDate = null) {
     const { data, error } = await supabase
         .from('quests')
         .insert({
@@ -122,6 +122,7 @@ export async function createQuest(arcId, title, coreQuestion, isBoss = false) {
             title,
             core_question: coreQuestion,
             is_boss: isBoss,
+            scheduled_date: scheduledDate
         })
         .select('*, arcs!inner(*, domains!inner(*))')
         .single();
@@ -219,7 +220,7 @@ export async function createJournalEntry(content, mood) {
 export async function getActivities(limit = 50) {
     const { data, error } = await supabase
         .from('activities')
-        .select('*, users!inner(display_name, telegram_username)')
+        .select('*, users!inner(display_name, telegram_username, avatar_url)')
         .order('created_at', { ascending: false })
         .limit(limit);
     if (error) throw error;

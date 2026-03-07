@@ -199,6 +199,11 @@ function showQuestDetail(questId) {
       <textarea class="input" id="quest-notes" placeholder="Write your thoughts, derivations, insights...">${getPhaseNotes(quest) || ''}</textarea>
     </div>
 
+    <div class="input-group">
+      <label>Scheduled Date</label>
+      <input type="date" class="input" id="quest-scheduled-date" value="${quest.scheduled_date || ''}">
+    </div>
+
     <button class="btn btn-primary btn-full" id="save-quest-btn"><i data-lucide="save" style="width:18px;height:18px;"></i> Save Progress</button>
     ${quest.phase !== 'conquered' ? `<button class="btn btn-ghost btn-full" id="conquer-quest-btn" style="margin-top:8px;"><i data-lucide="swords" style="width:18px;height:18px;"></i> Mark as Conquered</button>` : ''}
   `);
@@ -226,10 +231,12 @@ function showQuestDetail(questId) {
         const selectedLevel = document.querySelector('#level-selector .selected')?.dataset.level;
         const selectedPhase = document.querySelector('#phase-selector .selected')?.dataset.phase;
         const notes = document.getElementById('quest-notes')?.value;
+        const scheduledDate = document.getElementById('quest-scheduled-date')?.value;
 
         const updates = {};
         if (selectedLevel !== undefined) updates.level = parseInt(selectedLevel);
         if (selectedPhase) updates.phase = selectedPhase;
+        if (scheduledDate !== undefined) updates.scheduled_date = scheduledDate || null;
 
         const noteKey = getNoteKey(selectedPhase || quest.phase);
         if (noteKey && notes) updates[noteKey] = notes;
@@ -313,6 +320,11 @@ function showAddQuestModal() {
         <textarea class="input" id="quest-question" placeholder="The driving question that makes this topic fascinating..." style="min-height:70px;"></textarea>
       </div>
 
+      <div class="input-group">
+        <label>Scheduled Date (Optional)</label>
+        <input type="date" class="input" id="quest-date">
+      </div>
+
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
         <input type="checkbox" id="quest-boss">
         <label for="quest-boss" style="font-size:13px;cursor:pointer;"><i data-lucide="crown" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> Boss Quest (foundational topic)</label>
@@ -382,12 +394,13 @@ function showAddQuestModal() {
             const title = document.getElementById('quest-title')?.value?.trim();
             const question = document.getElementById('quest-question')?.value?.trim();
             const isBoss = document.getElementById('quest-boss')?.checked;
+            const scheduledDate = document.getElementById('quest-date')?.value;
 
             if (!title || !question) { showToast('Fill in title and question', 'error'); return; }
 
             // Create a default arc for the domain
             const arc = await createArc(domainId, 'General', '', '');
-            await createQuest(arc.id, title, question, isBoss);
+            await createQuest(arc.id, title, question, isBoss, scheduledDate || null);
 
             showToast('Quest created!', 'success');
             closeModal();

@@ -999,3 +999,29 @@ textarea.input {
 
 /* --- Scrollbar (hidden) --- */
 ::-webkit-scrollbar { display: none; }
+
+/* --- Planner / Calendar --- */
+.planner-calendar {
+  user-select: none;
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1/1.2;
+}
+
+.calendar-day.today {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.calendar-day.selected {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-day:active {
+  transform: scale(0.95);
+}

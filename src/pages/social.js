@@ -101,9 +101,13 @@ function renderActivityItem(activity) {
     const name = activity.users?.display_name || 'Someone';
     const isMe = activity.user_id === getCurrentUser()?.id;
 
+    const avatarUrl = activity.users?.avatar_url;
+
     return `
     <div class="activity-item">
-      <div class="activity-icon"><i data-lucide="${icon}"></i></div>
+      <div class="activity-icon">
+        ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : `<i data-lucide="${icon}"></i>`}
+      </div>
       <div class="activity-body">
         <div class="activity-text">
           <strong>${isMe ? 'You' : name}</strong> ${activity.title}
@@ -122,12 +126,15 @@ function prependActivity(activity) {
     // We need to fetch user info for the new activity
     const icon = ACTIVITY_ICONS[activity.activity_type] || 'pin';
     const isMe = activity.user_id === getCurrentUser()?.id;
+    const avatarUrl = getCurrentUser()?.avatar_url;
 
     const item = document.createElement('div');
     item.className = 'activity-item';
     item.style.animation = 'pageIn 0.3s var(--ease)';
     item.innerHTML = `
-    <div class="activity-icon"><i data-lucide="${icon}"></i></div>
+    <div class="activity-icon">
+      ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : `<i data-lucide="${icon}"></i>`}
+    </div>
     <div class="activity-body">
       <div class="activity-text">
         <strong>${isMe ? 'You' : 'A Squad Member'}</strong> ${activity.title}
