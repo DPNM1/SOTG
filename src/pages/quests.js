@@ -5,8 +5,6 @@
 import { getDomains, getQuests, createDomain, createArc, createQuest, updateQuest, generateQuests, getCurrentUser } from '../lib/api.js';
 import { showToast, showModal, closeModal, LEVEL_NAMES, PHASE_NAMES, PHASE_ORDER, DOMAIN_COLORS, DOMAIN_ICONS } from '../lib/ui.js';
 
-export { showQuestDetail };
-
 let quests = [];
 let domains = [];
 
