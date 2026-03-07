@@ -244,12 +244,12 @@ export function showQuestDetail(questOrId) {
         if (noteKey && notes) updates[noteKey] = notes;
 
         try {
-            await updateQuest(questId, updates);
+            await updateQuest(quest.id, updates);
             showToast('Quest updated!', 'success');
             closeModal();
-            await loadQuests();
+            if (typeof loadQuests === 'function') await loadQuests();
             document.dispatchEvent(new CustomEvent('quest:updated'));
-            updateHeaderStats();
+            if (typeof updateHeaderStats === 'function') updateHeaderStats();
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
         }
@@ -258,12 +258,12 @@ export function showQuestDetail(questOrId) {
     // Conquer
     document.getElementById('conquer-quest-btn')?.addEventListener('click', async () => {
         try {
-            await updateQuest(questId, { phase: 'conquered', conquered_at: new Date().toISOString() });
+            await updateQuest(quest.id, { phase: 'conquered', conquered_at: new Date().toISOString() });
             showToast('Quest Conquered!', 'success');
             closeModal();
-            await loadQuests();
+            if (typeof loadQuests === 'function') await loadQuests();
             document.dispatchEvent(new CustomEvent('quest:updated'));
-            updateHeaderStats();
+            if (typeof updateHeaderStats === 'function') updateHeaderStats();
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
         }

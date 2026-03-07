@@ -157,11 +157,19 @@ function renderDayQuests() {
 
     container.innerHTML = html;
     if (window.lucide) window.lucide.createIcons();
-
-    container.querySelectorAll('.open-quest-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const quest = quests.find(q => q.id === btn.dataset.id);
-            if (quest) showQuestDetail(quest);
-        });
-    });
 }
+
+// Event Delegation for the entire planner-content
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.open-quest-btn');
+    if (btn) {
+        const questId = btn.dataset.id;
+        const quest = quests.find(q => q.id === questId);
+        if (quest) {
+            showQuestDetail(quest);
+        } else {
+            // Fallback: try to fetch it if not in current view
+            showQuestDetail(questId);
+        }
+    }
+});
