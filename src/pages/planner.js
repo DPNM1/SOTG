@@ -4,6 +4,7 @@
 
 import { getQuests, updateQuest } from '../lib/api.js';
 import { showToast, PHASE_NAMES } from '../lib/ui.js';
+import { showQuestDetail } from './quests.js';
 
 export function renderPlannerPage() {
     const page = document.createElement('div');
@@ -27,6 +28,12 @@ export function renderPlannerPage() {
         if (e.detail.page === 'planner') {
             document.removeEventListener('page:mounted', handler);
             initPlannerPage();
+        }
+    });
+
+    document.addEventListener('quest:updated', () => {
+        if (window.location.hash === '#planner') {
+            loadPlannerData();
         }
     });
 
@@ -141,7 +148,7 @@ function renderDayQuests() {
                     <div style="font-size: 12px; color: var(--text-hint); margin-bottom: 12px; font-style: italic;">"${q.core_question}"</div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span class="quest-phase ${q.phase}" style="font-size: 10px; padding: 2px 8px;">${PHASE_NAMES[q.phase]}</span>
-                        <button class="btn btn-secondary btn-sm" onclick="window.navigate('quests')">Open</button>
+                        <button class="btn btn-secondary btn-sm open-quest-btn" data-id="${q.id}">Open</button>
                     </div>
                 </div>
             `;
@@ -150,4 +157,11 @@ function renderDayQuests() {
 
     container.innerHTML = html;
     if (window.lucide) window.lucide.createIcons();
+
+    container.querySelectorAll('.open-quest-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const quest = quests.find(q => q.id === btn.dataset.id);
+            if (quest) showQuestDetail(quest);
+        });
+    });
 }

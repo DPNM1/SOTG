@@ -12,6 +12,8 @@ import { renderSocialPage } from './pages/social.js';
 import { renderProfilePage } from './pages/profile.js';
 import { renderPlannerPage } from './pages/planner.js';
 
+window.navigate = navigate;
+
 // ---- Initialize App ----
 async function initApp() {
   const tg = window.Telegram?.WebApp;

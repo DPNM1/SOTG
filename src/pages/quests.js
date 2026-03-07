@@ -5,6 +5,8 @@
 import { getDomains, getQuests, createDomain, createArc, createQuest, updateQuest, generateQuests, getCurrentUser } from '../lib/api.js';
 import { showToast, showModal, closeModal, LEVEL_NAMES, PHASE_NAMES, PHASE_ORDER, DOMAIN_COLORS, DOMAIN_ICONS } from '../lib/ui.js';
 
+export { showQuestDetail };
+
 let quests = [];
 let domains = [];
 
@@ -162,8 +164,8 @@ function renderQuestCard(q, domColor) {
   `;
 }
 
-function showQuestDetail(questId) {
-    const quest = quests.find(q => q.id === questId);
+export function showQuestDetail(questOrId) {
+    const quest = typeof questOrId === 'string' ? quests.find(q => q.id === questOrId) : questOrId;
     if (!quest) return;
 
     const domColor = quest.arcs?.domains?.color || '#6C5CE7';
@@ -246,6 +248,7 @@ function showQuestDetail(questId) {
             showToast('Quest updated!', 'success');
             closeModal();
             await loadQuests();
+            document.dispatchEvent(new CustomEvent('quest:updated'));
             updateHeaderStats();
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
@@ -259,6 +262,7 @@ function showQuestDetail(questId) {
             showToast('Quest Conquered!', 'success');
             closeModal();
             await loadQuests();
+            document.dispatchEvent(new CustomEvent('quest:updated'));
             updateHeaderStats();
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
