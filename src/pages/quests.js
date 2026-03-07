@@ -298,7 +298,7 @@ function showAddQuestModal() {
         <div class="input-group">
           <label>Icon</label>
           <div class="chip-row" id="icon-picker">
-            ${DOMAIN_ICONS.map(i => `<button class="chip" data-icon="${i}"><i data-lucide="${i}"></i></button>`).join('')}
+          ${DOMAIN_ICONS.map((i, idx) => `<button class="chip ${idx === 0 ? 'selected' : ''}" data-icon="${i}"><i data-lucide="${i}" style="width:16px;height:16px;"></i></button>`).join('')}
           </div>
         </div>
       </div>

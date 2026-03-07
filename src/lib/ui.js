@@ -17,6 +17,8 @@ export function showModal(contentHtml) {
     container.innerHTML = `<div class="modal-handle"></div>${contentHtml}`;
     overlay.classList.remove('hidden');
 
+    if (window.lucide) window.lucide.createIcons();
+
     overlay.onclick = (e) => {
         if (e.target === overlay) closeModal();
     };
@@ -76,4 +78,4 @@ export const ACTIVITY_ICONS = {
 
 export const DOMAIN_COLORS = ['#ffffff', '#cccccc', '#999999', '#666666', '#444444', '#222222', '#111111', '#888888'];
 
-export const DOMAIN_ICONS = ['📚', '🧮', '🔬', '💻', '🎵', '🎨', '🏋️', '✍️', '🧠', '🌍'];
+export const DOMAIN_ICONS = ['book', 'calculator', 'flask-conical', 'cpu', 'music', 'palette', 'dumbbell', 'pen-tool', 'brain', 'globe'];
