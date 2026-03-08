@@ -149,7 +149,7 @@ export async function createQuest(arcId, title, coreQuestion, isBoss = false, sc
             arc_id: finalArcId,
             user_id: currentUser.id,
             title,
-            core_question: coreQuestion,
+            core_question: coreQuestion || (isRoutine ? 'Routine task' : 'No question set'),
             is_boss: isBoss,
             scheduled_date: scheduledDate,
             is_routine: isRoutine,

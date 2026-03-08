@@ -431,7 +431,7 @@ function renderAddQuestModal(userGoals = []) {
         <input type="text" class="input" id="quest-title" placeholder="e.g. Newton's Laws of Motion">
       </div>
 
-      <div class="input-group">
+      <div class="input-group" id="core-question-group">
         <label>Core Question</label>
         <textarea class="input" id="quest-question" placeholder="The driving question that makes this topic fascinating..." style="min-height:70px;"></textarea>
       </div>
@@ -482,6 +482,21 @@ function renderAddQuestModal(userGoals = []) {
     let selectedIcon = 'book';
     document.getElementById('new-domain-btn')?.addEventListener('click', () => {
         document.getElementById('new-domain-fields').classList.toggle('hidden');
+    });
+
+    document.getElementById('domain-select')?.addEventListener('change', (e) => {
+        const select = e.target;
+        const selectedText = select.options[select.selectedIndex].text;
+        const questionGroup = document.getElementById('core-question-group');
+        if (selectedText === 'Routine') {
+            questionGroup.classList.add('hidden');
+            document.getElementById('quest-question').value = 'Quick routine task';
+        } else {
+            questionGroup.classList.remove('hidden');
+            if (document.getElementById('quest-question').value === 'Quick routine task') {
+                document.getElementById('quest-question').value = '';
+            }
+        }
     });
 
     document.querySelectorAll('#icon-picker .chip').forEach(chip => {
