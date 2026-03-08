@@ -119,14 +119,34 @@ export async function getQuests(userId) {
 
 export async function createQuest(arcId, title, coreQuestion, isBoss = false, scheduledDate = null, goalId = null) {
     // AI categorization: If title starts with emoji or common simple verbs, mark as routine
-    const routineShortcuts = ['clean', 'buy', 'make', 'do', 'task', 'call', 'fix'];
+    const routineShortcuts = ['clean', 'buy', 'make', 'do', 'task', 'call', 'fix', 'run', 'order'];
     const lowerTitle = title.toLowerCase();
     const isRoutine = routineShortcuts.some(word => lowerTitle.startsWith(word)) || /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u.test(title);
+
+    let finalArcId = arcId;
+
+    // If routine, ensure it belongs to the "Routine" domain
+    if (isRoutine) {
+        const domains = await getDomains();
+        let routineDom = domains.find(d => d.name === 'Routine');
+        if (!routineDom) {
+            routineDom = await createDomain('Routine', '#222222', 'clipboard-list');
+        }
+        
+        // Find or create 'General' arc in Routine domain
+        const { data: arcs } = await supabase.from('arcs').select('*').eq('domain_id', routineDom.id).eq('name', 'General');
+        if (arcs && arcs.length > 0) {
+            finalArcId = arcs[0].id;
+        } else {
+            const newArc = await createArc(routineDom.id, 'General', 'General routine tasks', '');
+            finalArcId = newArc.id;
+        }
+    }
 
     const { data, error } = await supabase
         .from('quests')
         .insert({
-            arc_id: arcId,
+            arc_id: finalArcId,
             user_id: currentUser.id,
             title,
             core_question: coreQuestion,
@@ -134,19 +154,14 @@ export async function createQuest(arcId, title, coreQuestion, isBoss = false, sc
             scheduled_date: scheduledDate,
             is_routine: isRoutine,
             goal_id: goalId,
-            phase: isRoutine ? 'conquered' : 'recon'
+            phase: 'recon' // Always start as open
         })
         .select('*, arcs!inner(*, domains!inner(*))')
         .single();
     if (error) throw error;
     
     // Log activity
-    await logActivity(isRoutine ? 'quest_conquered' : 'quest_created', isRoutine ? `Quick Conquered: ${title}` : `Started quest: ${title}`, data.id);
-    
-    if (isRoutine) {
-        await updateXP(data.xp_reward || 5);
-        await updateStreak();
-    }
+    await logActivity('quest_created', `Started ${isRoutine ? 'routine' : ''} quest: ${title}`, data.id);
     
     return data;
 }

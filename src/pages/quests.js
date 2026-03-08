@@ -171,31 +171,33 @@ export function showQuestDetail(questOrId) {
 
     showModal(`
     <h2 class="modal-title">${quest.is_boss ? '<i data-lucide="crown" style="width:20px;height:20px;display:inline-block;vertical-align:middle;color:#fdcb6e;"></i> ' : ''}${quest.title}</h2>
-    <p style="color:var(--text-hint);font-style:italic;margin-bottom:16px;">"${quest.core_question}"</p>
-
-    <div class="section-subtitle">Understanding Level</div>
-    <div class="level-selector" id="level-selector">
-      ${[0, 1, 2, 3, 4, 5, 6].map(l => `
-        <button class="level-select-btn ${quest.level === l ? 'selected l' + l : ''}" data-level="${l}" title="${LEVEL_NAMES[l]}">
-          ${l}
-        </button>
-      `).join('')}
-    </div>
-    <p style="text-align:center;font-size:12px;color:var(--text-hint);margin-bottom:16px;" id="level-name">${LEVEL_NAMES[quest.level]}</p>
-
-    <div class="section-subtitle">Phase</div>
-    <div class="chip-row" id="phase-selector" style="justify-content:center;">
-      ${PHASE_ORDER.map((p, i) => {
-        const isLocked = i > currentPhaseIdx + 1 && p !== 'conquered';
-        return `
-          <button class="chip ${quest.phase === p ? 'selected' : ''}" data-phase="${p}" ${isLocked ? 'style="opacity:0.4;pointer-events:none;"' : ''}>
-            ${PHASE_NAMES[p]}
+    <p style="color:var(--text-hint);font-style:italic;margin-bottom:16px;">"${quest.core_question}"</p>    ${!quest.is_routine ? `
+      <div class="section-subtitle">Understanding Level</div>
+      <div class="level-selector" id="level-selector">
+        ${[0, 1, 2, 3, 4, 5, 6].map(l => `
+          <button class="level-select-btn ${quest.level === l ? 'selected l' + l : ''}" data-level="${l}" title="${LEVEL_NAMES[l]}">
+            ${l}
           </button>
-        `;
-      }).join('')}
-    </div>
+        `).join('')}
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--text-hint);margin-bottom:16px;" id="level-name">${LEVEL_NAMES[quest.level]}</p>
+    ` : ''}
 
-    ${quest.phase === 'arena' ? `
+    ${!quest.is_routine ? `
+      <div class="section-subtitle">Phase</div>
+      <div class="chip-row" id="phase-selector" style="justify-content:center;">
+        ${PHASE_ORDER.map((p, i) => {
+          const isLocked = i > currentPhaseIdx + 1 && p !== 'conquered';
+          return `
+            <button class="chip ${quest.phase === p ? 'selected' : ''}" data-phase="${p}" ${isLocked ? 'style="opacity:0.4;pointer-events:none;"' : ''}>
+              ${PHASE_NAMES[p]}
+            </button>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+
+    ${quest.phase === 'arena' && !quest.is_routine ? `
       <div class="arena-challenge-box" style="margin-top:20px; padding:15px; background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.2); border-radius:12px;">
         <div class="section-subtitle" style="color:#ff7675; margin-top:0;"><i data-lucide="swords" style="width:14px;height:14px;"></i> Arena Duel: Explain the Insight</div>
         <p style="font-size:12px; color:var(--text-hint); margin-bottom:12px;">To pass this phase, provide a deep explanation. AI must score you 7/10 or higher.</p>
@@ -208,8 +210,8 @@ export function showQuestDetail(questOrId) {
     <hr class="divider">
 
     <div class="input-group">
-      <label>Notes for current phase</label>
-      <textarea class="input" id="quest-notes" placeholder="Write your thoughts, derivations, insights...">${getPhaseNotes(quest) || ''}</textarea>
+      <label>${quest.is_routine ? 'Task Details / Status' : 'Notes for current phase'}</label>
+      <textarea class="input" id="quest-notes" placeholder="${quest.is_routine ? 'Any quick notes on this task...' : 'Write your thoughts, derivations, insights...'}">${quest.is_routine ? (quest.recon_notes || '') : (getPhaseNotes(quest) || '')}</textarea>
     </div>
 
     <div class="input-group">
@@ -310,6 +312,38 @@ export function showQuestDetail(questOrId) {
             btn.disabled = false;
             btn.innerHTML = '<i data-lucide="zap" style="width:16px;height:16px;"></i> Battle AI Oracle';
             if (window.lucide) window.lucide.createIcons();
+        }
+    });
+
+    // Save
+    document.getElementById('save-quest-btn')?.addEventListener('click', async () => {
+        const notes = document.getElementById('quest-notes')?.value;
+        const scheduledDate = document.getElementById('quest-scheduled-date')?.value;
+        const selectedLevel = document.querySelector('#level-selector .selected')?.dataset.level;
+        const selectedPhase = document.querySelector('#phase-selector .selected')?.dataset.phase;
+
+        const updates = {
+            scheduled_date: scheduledDate || null
+        };
+
+        if (quest.is_routine) {
+            updates.recon_notes = notes;
+        } else {
+            const noteKey = getNoteKey(selectedPhase || quest.phase);
+            if (noteKey) updates[noteKey] = notes;
+            if (selectedLevel !== undefined) updates.level = parseInt(selectedLevel);
+            if (selectedPhase) updates.phase = selectedPhase;
+        }
+
+        try {
+            const { updateQuest } = await import('../lib/api.js');
+            await updateQuest(quest.id, updates);
+            showToast('Quest updated!', 'success');
+            closeModal();
+            if (typeof loadQuests === 'function') await loadQuests();
+            document.dispatchEvent(new CustomEvent('quest:updated'));
+        } catch (err) {
+            showToast('Error: ' + err.message, 'error');
         }
     });
 
