@@ -117,7 +117,12 @@ export async function getQuests(userId) {
     return data;
 }
 
-export async function createQuest(arcId, title, coreQuestion, isBoss = false, scheduledDate = null) {
+export async function createQuest(arcId, title, coreQuestion, isBoss = false, scheduledDate = null, goalId = null) {
+    // AI categorization: If title starts with emoji or common simple verbs, mark as routine
+    const routineShortcuts = ['clean', 'buy', 'make', 'do', 'task', 'call', 'fix'];
+    const lowerTitle = title.toLowerCase();
+    const isRoutine = routineShortcuts.some(word => lowerTitle.startsWith(word)) || /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u.test(title);
+
     const { data, error } = await supabase
         .from('quests')
         .insert({
@@ -126,14 +131,37 @@ export async function createQuest(arcId, title, coreQuestion, isBoss = false, sc
             title,
             core_question: coreQuestion,
             is_boss: isBoss,
-            scheduled_date: scheduledDate
+            scheduled_date: scheduledDate,
+            is_routine: isRoutine,
+            goal_id: goalId,
+            phase: isRoutine ? 'conquered' : 'recon'
         })
         .select('*, arcs!inner(*, domains!inner(*))')
         .single();
     if (error) throw error;
+    
     // Log activity
-    await logActivity('quest_created', `Started quest: ${title}`, data.id);
+    await logActivity(isRoutine ? 'quest_conquered' : 'quest_created', isRoutine ? `Quick Conquered: ${title}` : `Started quest: ${title}`, data.id);
+    
+    if (isRoutine) {
+        await updateXP(data.xp_reward || 5);
+        await updateStreak();
+    }
+    
     return data;
+}
+
+async function updateXP(reward) {
+    const newXP = (currentUser.xp || 0) + reward;
+    const newLevel = Math.floor(Math.sqrt(newXP / 10)) + 1;
+    
+    const { data: updatedUser } = await supabase
+        .from('users')
+        .update({ xp: newXP, level: newLevel })
+        .eq('id', currentUser.id)
+        .select().single();
+    
+    if (updatedUser) currentUser = updatedUser;
 }
 
 export async function updateQuest(questId, updates) {
@@ -152,23 +180,13 @@ export async function updateQuest(questId, updates) {
 
     // Log conquered
     if (updates.phase === 'conquered' && data) {
-        await supabase.from('quests').update({ conquered_at: new Date().toISOString() }).eq('id', questId);
-        
-        // Add XP
-        const newXP = (currentUser.xp || 0) + (data.xp_reward || 10);
-        const newLevel = Math.floor(Math.sqrt(newXP / 10)) + 1;
-        
-        const { data: updatedUser } = await supabase
-            .from('users')
-            .update({ xp: newXP, level: newLevel })
-            .eq('id', currentUser.id)
-            .select().single();
-        
-        if (updatedUser) currentUser = updatedUser;
-
-        await logActivity('quest_conquered', `Conquered: "${data.title}" (+${data.xp_reward || 10} XP)`, questId);
-        await updateStreak();
-        await checkArtifacts(data.category);
+        if (!data.conquered_at) {
+            await supabase.from('quests').update({ conquered_at: new Date().toISOString() }).eq('id', questId);
+            await updateXP(data.xp_reward || 10);
+            await logActivity('quest_conquered', `Conquered: "${data.title}" (+${data.xp_reward || 10} XP)`, questId);
+            await updateStreak();
+            await checkArtifacts(data.category);
+        }
     }
 
     return data;
@@ -459,6 +477,28 @@ export async function createConnection(questAId, questBId, description) {
         .single();
     if (error) throw error;
     await logActivity('connection_found', `Found connection: ${description}`);
+    return data;
+}
+
+// ---- Goals ----
+export async function getGoals() {
+    const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+}
+
+export async function createGoal(title, description) {
+    const { data, error } = await supabase
+        .from('goals')
+        .insert({ user_id: currentUser.id, title, description })
+        .select()
+        .single();
+    if (error) throw error;
+    await logActivity('goal_created', `Set ultimate goal: ${title}`);
     return data;
 }
 

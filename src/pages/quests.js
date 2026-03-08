@@ -185,12 +185,25 @@ export function showQuestDetail(questOrId) {
 
     <div class="section-subtitle">Phase</div>
     <div class="chip-row" id="phase-selector" style="justify-content:center;">
-      ${PHASE_ORDER.map((p, i) => `
-        <button class="chip ${quest.phase === p ? 'selected' : ''}" data-phase="${p}" ${i > currentPhaseIdx + 1 ? 'style="opacity:0.4"' : ''}>
-          ${PHASE_NAMES[p]}
-        </button>
-      `).join('')}
+      ${PHASE_ORDER.map((p, i) => {
+        const isLocked = i > currentPhaseIdx + 1 && p !== 'conquered';
+        return `
+          <button class="chip ${quest.phase === p ? 'selected' : ''}" data-phase="${p}" ${isLocked ? 'style="opacity:0.4;pointer-events:none;"' : ''}>
+            ${PHASE_NAMES[p]}
+          </button>
+        `;
+      }).join('')}
     </div>
+
+    ${quest.phase === 'arena' ? `
+      <div class="arena-challenge-box" style="margin-top:20px; padding:15px; background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.2); border-radius:12px;">
+        <div class="section-subtitle" style="color:#ff7675; margin-top:0;"><i data-lucide="swords" style="width:14px;height:14px;"></i> Arena Duel: Explain the Insight</div>
+        <p style="font-size:12px; color:var(--text-hint); margin-bottom:12px;">To pass this phase, provide a deep explanation. AI must score you 7/10 or higher.</p>
+        <textarea class="input" id="arena-explanation" placeholder="Explain the core concept in your own words..." style="min-height:100px; margin-bottom:12px; border-color:rgba(255,107,107,0.3);"></textarea>
+        <button class="btn btn-primary btn-full" id="start-arena-duel" style="background:#ff7675; border:none;"><i data-lucide="zap" style="width:16px;height:16px;"></i> Battle AI Oracle</button>
+        <div id="arena-result" class="hidden" style="margin-top:12px; font-size:13px;"></div>
+      </div>
+    ` : ''}
 
     <hr class="divider">
 
@@ -224,6 +237,47 @@ export function showQuestDetail(questOrId) {
             document.querySelectorAll('#phase-selector .chip').forEach(c => c.classList.remove('selected'));
             chip.classList.add('selected');
         });
+    });
+
+    // Arena Duel
+    document.getElementById('start-arena-duel')?.addEventListener('click', async () => {
+        const explanation = document.getElementById('arena-explanation')?.value?.trim();
+        if (!explanation) { showToast('Provide an explanation first!', 'error'); return; }
+
+        const btn = document.getElementById('start-arena-duel');
+        const resultDiv = document.getElementById('arena-result');
+        btn.disabled = true;
+        btn.textContent = '⏳ Scrutinizing...';
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = '<p style="color:var(--text-hint)">AI Oracle is weighing your soul...</p>';
+
+        try {
+            const { callAI } = await import('../lib/api.js');
+            const res = await callAI('arena_duel', explanation, quest.title);
+            
+            resultDiv.innerHTML = `<div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:10px;">${res.message.replace(/\n/g, '<br>')}</div>`;
+            
+            if (res.score !== null) {
+                if (res.score >= 7) {
+                    showToast(`Mastery proven! Score: ${res.score}/10`, 'success');
+                    await updateQuest(quest.id, { phase: 'debrief', arena_score: res.score });
+                    setTimeout(() => {
+                        closeModal();
+                        loadQuests();
+                    }, 2000);
+                } else {
+                    showToast(`Insufficient depth. Score: ${res.score}/10`, 'error');
+                }
+            } else {
+                showToast('AI provided no score. Try again with more depth.', 'error');
+            }
+        } catch (err) {
+            showToast('AI Error: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="zap" style="width:16px;height:16px;"></i> Battle AI Oracle';
+            if (window.lucide) window.lucide.createIcons();
+        }
     });
 
     // Save
@@ -279,6 +333,14 @@ function getNoteKey(phase) {
 }
 
 function showAddQuestModal() {
+    import('../lib/api.js').then(api => {
+        api.getGoals().then(goals => {
+            renderAddQuestModal(goals);
+        });
+    });
+}
+
+function renderAddQuestModal(userGoals = []) {
     showModal(`
     <h2 class="modal-title"><i data-lucide="map" style="width:24px;height:24px;display:inline-block;vertical-align:middle;"></i> New Quest</h2>
 
@@ -297,6 +359,14 @@ function showAddQuestModal() {
           </select>
           <button class="btn btn-secondary btn-sm" id="new-domain-btn">+</button>
         </div>
+      </div>
+
+      <div class="input-group">
+        <label>Link to Ultimate Goal (Optional)</label>
+        <select class="input" id="goal-select">
+          <option value="">No specific goal</option>
+          ${userGoals.map(g => `<option value="${g.id}">${g.title}</option>`).join('')}
+        </select>
       </div>
 
       <div id="new-domain-fields" class="hidden">
@@ -397,12 +467,13 @@ function showAddQuestModal() {
             const question = document.getElementById('quest-question')?.value?.trim();
             const isBoss = document.getElementById('quest-boss')?.checked;
             const scheduledDate = document.getElementById('quest-date')?.value;
+            const goalId = document.getElementById('goal-select')?.value || null;
 
             if (!title || !question) { showToast('Fill in title and question', 'error'); return; }
 
             // Create a default arc for the domain
             const arc = await createArc(domainId, 'General', '', '');
-            await createQuest(arc.id, title, question, isBoss, scheduledDate || null);
+            await createQuest(arc.id, title, question, isBoss, scheduledDate || null, goalId);
 
             showToast('Quest created!', 'success');
             closeModal();
