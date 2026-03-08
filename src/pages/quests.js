@@ -218,7 +218,12 @@ export function showQuestDetail(questOrId) {
     </div>
 
     <button class="btn btn-primary btn-full" id="save-quest-btn"><i data-lucide="save" style="width:18px;height:18px;"></i> Save Progress</button>
-    ${quest.phase !== 'conquered' ? `<button class="btn btn-ghost btn-full" id="conquer-quest-btn" style="margin-top:8px;"><i data-lucide="swords" style="width:18px;height:18px;"></i> Mark as Conquered</button>` : ''}
+    ${quest.phase !== 'conquered' ? `
+      <button class="btn btn-ghost btn-full ${(!quest.is_routine && quest.phase !== 'debrief') ? 'disabled' : ''}" id="conquer-quest-btn" style="margin-top:8px; ${(!quest.is_routine && quest.phase !== 'debrief') ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+        <i data-lucide="swords" style="width:18px;height:18px;"></i> Mark as Conquered
+      </button>
+      ${(!quest.is_routine && quest.phase !== 'debrief') ? `<p style="font-size:10px; color:var(--text-hint); text-align:center; margin-top:4px;">Complete all phases to conquer this quest.</p>` : ''}
+    ` : ''}
   `);
 
     // Bind level selector
@@ -241,21 +246,49 @@ export function showQuestDetail(questOrId) {
 
     // Arena Duel
     document.getElementById('start-arena-duel')?.addEventListener('click', async () => {
-        const explanation = document.getElementById('arena-explanation')?.value?.trim();
-        if (!explanation) { showToast('Provide an explanation first!', 'error'); return; }
-
         const btn = document.getElementById('start-arena-duel');
         const resultDiv = document.getElementById('arena-result');
+        const explanationArea = document.getElementById('arena-explanation');
+        
+        // If we haven't asked a question yet, ask one
+        if (!resultDiv.dataset.questionAsked) {
+            btn.disabled = true;
+            btn.textContent = '⏳ Oracle is pondering...';
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<p style="color:var(--text-hint)">AI Oracle is formulating a challenge...</p>';
+            
+            try {
+                const { callAI } = await import('../lib/api.js');
+                const res = await callAI('challenge_generator', `Topic: ${quest.title}. Core Question: ${quest.core_question}`);
+                
+                resultDiv.innerHTML = `<div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:10px; border-left: 2px solid var(--accent); font-weight: 500;">${res.message}</div>`;
+                resultDiv.dataset.questionAsked = "true";
+                btn.textContent = '⚔️ Submit Explanation';
+                btn.style.background = '#00b894';
+                explanationArea.focus();
+            } catch (err) {
+                showToast('AI Error: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Battle AI Oracle';
+            } finally {
+                btn.disabled = false;
+                if (window.lucide) window.lucide.createIcons();
+            }
+            return;
+        }
+
+        // Evaluate answer
+        const explanation = explanationArea?.value?.trim();
+        if (!explanation) { showToast('Type your answer first!', 'error'); return; }
+
         btn.disabled = true;
         btn.textContent = '⏳ Scrutinizing...';
-        resultDiv.classList.remove('hidden');
-        resultDiv.innerHTML = '<p style="color:var(--text-hint)">AI Oracle is weighing your soul...</p>';
-
+        
         try {
             const { callAI } = await import('../lib/api.js');
-            const res = await callAI('arena_duel', explanation, quest.title);
+            const res = await callAI('arena_duel', explanation, `Topic: ${quest.title}. Question asked: ${resultDiv.innerText}`);
             
-            resultDiv.innerHTML = `<div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:10px;">${res.message.replace(/\n/g, '<br>')}</div>`;
+            resultDiv.innerHTML += `<div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:10px;">${res.message.replace(/\n/g, '<br>')}</div>`;
             
             if (res.score !== null) {
                 if (res.score >= 7) {
@@ -264,12 +297,12 @@ export function showQuestDetail(questOrId) {
                     setTimeout(() => {
                         closeModal();
                         loadQuests();
-                    }, 2000);
+                    }, 2500);
                 } else {
                     showToast(`Insufficient depth. Score: ${res.score}/10`, 'error');
                 }
             } else {
-                showToast('AI provided no score. Try again with more depth.', 'error');
+                showToast('AI provided no score. Try harder!', 'error');
             }
         } catch (err) {
             showToast('AI Error: ' + err.message, 'error');
@@ -280,35 +313,12 @@ export function showQuestDetail(questOrId) {
         }
     });
 
-    // Save
-    document.getElementById('save-quest-btn')?.addEventListener('click', async () => {
-        const selectedLevel = document.querySelector('#level-selector .selected')?.dataset.level;
-        const selectedPhase = document.querySelector('#phase-selector .selected')?.dataset.phase;
-        const notes = document.getElementById('quest-notes')?.value;
-        const scheduledDate = document.getElementById('quest-scheduled-date')?.value;
-
-        const updates = {};
-        if (selectedLevel !== undefined) updates.level = parseInt(selectedLevel);
-        if (selectedPhase) updates.phase = selectedPhase;
-        if (scheduledDate !== undefined) updates.scheduled_date = scheduledDate || null;
-
-        const noteKey = getNoteKey(selectedPhase || quest.phase);
-        if (noteKey && notes) updates[noteKey] = notes;
-
-        try {
-            await updateQuest(quest.id, updates);
-            showToast('Quest updated!', 'success');
-            closeModal();
-            if (typeof loadQuests === 'function') await loadQuests();
-            document.dispatchEvent(new CustomEvent('quest:updated'));
-            if (typeof updateHeaderStats === 'function') updateHeaderStats();
-        } catch (err) {
-            showToast('Error: ' + err.message, 'error');
-        }
-    });
-
     // Conquer
     document.getElementById('conquer-quest-btn')?.addEventListener('click', async () => {
+        if (!quest.is_routine && quest.phase !== 'debrief') {
+            showToast('You must complete the learning phases first!', 'error');
+            return;
+        }
         try {
             await updateQuest(quest.id, { phase: 'conquered', conquered_at: new Date().toISOString() });
             showToast('Quest Conquered!', 'success');

@@ -8,7 +8,6 @@ import { registerPage, initRouter, navigate } from './lib/router.js';
 import { showToast } from './lib/ui.js';
 import { renderQuestsPage } from './pages/quests.js';
 import { renderJournalPage } from './pages/journal.js';
-import { renderGraphPage } from './pages/graph.js';
 import { renderSocialPage } from './pages/social.js';
 import { renderProfilePage } from './pages/profile.js';
 import { renderPlannerPage } from './pages/planner.js';
@@ -30,7 +29,6 @@ async function initApp() {
   // Register pages
   registerPage('quests', renderQuestsPage);
   registerPage('journal', renderJournalPage);
-  registerPage('graph', renderGraphPage);
   registerPage('social', renderSocialPage);
   registerPage('planner', renderPlannerPage);
   registerPage('profile', renderProfilePage);
